@@ -1,5 +1,5 @@
 ---
-title: "Proyecto de reglas de asociación - Consumo"
+title: "Proyecto de Text Mining"
 author: "Bryan Velicka Leka y Franco Manuel García Dos Santos"
 date: "`r Sys.Date()`"
 output:
@@ -14,7 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # ---------------------- Introducción ---------------------- #
 
-En este documento preprocesaremos, analizaremos y visualizaremos datos y reglas sobre el dataset consumo.csv
+En este documento haremos text mining sobre los pdfs dados y haremos un pequeño
+trabajo de investigación.
 
 
 # ------------------ Manipulación dataset ------------------ #
