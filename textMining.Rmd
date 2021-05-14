@@ -22,6 +22,73 @@ trabajo de investigación.
 
 ## 0. Carga de paquetes necesarios
 ```{r message=FALSE, warning=FALSE}
+Needed <- c("tm", "SnowballCC", "RColorBrewer", "ggplot2", "wordcloud", 
+"biclust", "cluster", "igraph", "fpc","pdftools")
+install.packages(Needed, dependencies=TRUE)
+
+library(tm)
+library(pdftools)
+library(stringr)
+library(stringi)
+
+```
+
+
+```{r}
+directorio.textos <- file.path("./","pdfstextmining2021")
+
+directorio.textos
+
+dir(directorio.textos)
+
+list.files <- DirSource(directorio.textos)
+
+texts <- lapply(list.files, pdf_text)
+
+length(texts)
+
+lapply(texts, length)
+
+corpus <- VCorpus(VectorSource(texts))
+inspect(corpus)$meta
+
+#corpus <- tm_map(corpus, removePunctuation, ucp = TRUE)
+corpus <- tm_map(corpus,stripWhitespace)
+#corpus <- tm_map(corpus,content_transformer(tolower))
+
+
+
+
+```
+
+#Contenedor para eliminar caracteres especiales
+```{r}
+removeSpCh <- content_transformer(function (x , pattern ) gsub(pattern, " ", x) )
+
+corpus <- tm_map(corpus, removeSpCh, "\n")
+corpus <- tm_map(corpus, toSpace, "<d5>")
+corpus <- tm_map(corpus, toSpace, "<d1>")
+corpus <- tm_map(corpus, removeSpCh, "\f")
+
+```
+
+
+#Crear TDM y inspeccionar
+```{r}
+to_TDM <- function(my_corpus){
+    my_corpus <- TermDocumentMatrix(my_corpus,
+                                    control = 
+                                    list( removePunctuation = TRUE,
+                                          stopwords = stopwords(kind = "en"),
+                                          tolower = TRUE,
+                                          stemming = FALSE,
+                                          removeNumbers = TRUE,
+                                           ) )
+}
+
+my_tdm <- to_TDM(corpus)
+
+inspect(my_tdm[1:250,])
 
 
 ```
