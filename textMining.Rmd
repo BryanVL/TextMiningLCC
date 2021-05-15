@@ -88,6 +88,7 @@ corpus <- tm_map(corpus, removeSpCh, "\f")
 #Eliminar todas las palabras que contengan http
 corpus <- tm_map(corpus, removeSpCh, "(http)") 
 corpus <- tm_map(corpus, removeSpCh, "(aaas)")
+corpus <- tm_map(corpus, removeSpCh, "(doi)")
 
 #Sustituir empt por empty
 corpus <- tm_map(corpus, sustitution, "(empt)", "empty")
