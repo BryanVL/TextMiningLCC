@@ -31,26 +31,35 @@ library(ggplot2)
 
 ```
 
-
+## 1. Importación de textos
 ```{r}
+#Directorio en el que estan los pdfs
 directorio.textos <- file.path("./","pdfstextmining2021")
-
 directorio.textos
 
+#Listar ficheros en el directorio dado
 dir(directorio.textos)
 
+#Crea un objeto fuente (para acceder a los pdfs)
 list.files <- DirSource(directorio.textos)
 
+#aplica la funcion pdf_text a todos los pdfs de la fuente.
+#Esta función convierte los pdfs en texto
 texts <- lapply(list.files, pdf_text)
 
+#Longitud de la variable texts. Esto es el numero 
+#de textos distintos que tenemos
 length(texts)
 
+#Devuelve la longitud de todos los elementos de texts
 lapply(texts, length)
 
+#Crea un corpus a partir de texts
 corpus <- VCorpus(VectorSource(texts))
 inspect(corpus)$meta
 
-
+#Esta función quita signos de puntuación, espacios en blanco, convierte a 
+#minuscula y quita palabras no significativas en ingles.
 clean_corpus <- function(corpus){
   corpus <- tm_map(corpus, removePunctuation, ucp = TRUE)
   corpus <- tm_map(corpus,stripWhitespace)
@@ -63,54 +72,95 @@ corpus <- clean_corpus(corpus)
 
 ```
 
-#Contenedor para eliminar caracteres especiales
+## 2. Creación de Contenedor para eliminar caracteres especiales
 ```{r}
+#esta funcion recibe un patron y convierte en espacio en blanco las coincidencias
 removeSpCh <- content_transformer(function (x , pattern ) gsub(pattern, " ", x) )
 
+#esta funcion recibe un patron y convierte las coincidencias en lo que 
+#reciba en su segundo argumento
+sustitution <- content_transformer(function (x , pattern, sustitucion ) gsub(pattern, sustitucion, x) )
+
+corpus <- tm_map(corpus, removeSpCh, "\a") #Eliminar caracter \a
 corpus <- tm_map(corpus, removeSpCh, "\n")
 corpus <- tm_map(corpus, removeSpCh, "\f")
+
+#Eliminar todas las palabras que contengan http
+corpus <- tm_map(corpus, removeSpCh, "(http)") 
+corpus <- tm_map(corpus, removeSpCh, "(aaas)")
+
+#Sustituir empt por empty
+corpus <- tm_map(corpus, sustitution, "(empt)", "empty")
 
 ```
 
 
-#Crear TDM y inspeccionar
+#3. Creaación de TDM y inspección del mismo
 ```{r}
-#to_TDM <- function(my_corpus){
-#    my_corpus <- TermDocumentMatrix(my_corpus,
-#                                    control = 
-#                                    list( removePunctuation = TRUE,
-#                                          stopwords = stopwords(kind = "en"),
-#                                          tolower = TRUE,
-#                                          stemming = FALSE,
-#                                          removeNumbers = TRUE
-#                                           ) )
-#}
+#Esta función convierte un corpus en un tdm con un determinado formato
+to_TDM <- function(my_corpus){
+    my_corpus <- TermDocumentMatrix(my_corpus,
+                                    control = list( removePunctuation = TRUE,
+                                              stopwords = stopwords(kind = "en"),
+                                              tolower = TRUE,
+                                              stemming = FALSE,
+                                              removeNumbers = TRUE) )
+}
 
-#my_tdm <- to_TDM(corpus)
-#-------------------#
-my_tdm <- TermDocumentMatrix(corpus)
+#Esta función convierte un corpus en un dtm con un determinado formato
+to_DTM <- function(my_corpus){
+    my_corpus <- DocumentTermMatrix(my_corpus,
+                                    control = list( removePunctuation = TRUE,
+                                              stopwords = stopwords(kind = "en"),
+                                              tolower = TRUE,
+                                              stemming = FALSE,
+                                              removeNumbers = TRUE) )
+}
 
-frequent_terms <-  findFreqTerms(my_tdm, 
-              lowfreq = 25, 
-              highfreq = Inf)
+#convertimos el corpus en un tdm
+my_tdm <- to_TDM(corpus)
+
+#Buscamos los terminos mas frecuentes. Como minimo deben tener frecuencia 30
+frequent_terms <-  findFreqTerms(my_tdm, lowfreq = 20, highfreq = Inf)
 frequent_terms
 
+#Convertimos los terminos frecuentes del tdm en una matriz y vemos cuantas
+#Veces aparece cada palabra en cada texto
 matrix_tdm <- as.matrix(my_tdm[frequent_terms,])
 matrix_tdm
 
+#Se suman las filas para conseguir la frecuencia de cada termino
 freq <- rowSums(matrix_tdm)
 
+#Se hace una nube de palabras al que se le pasa los nombres de los terminos, 
+#las frecuencias, la frecuencia minima para que se muestre la palabra
+#y el rango de tamaño de las palabras a enseñar
 set.seed(142)   
-wordcloud(names(freq), freq, min.freq=5, scale=c(5, .1))
-#--------------------#
+wordcloud(names(freq), freq, min.freq=5, scale=c(4, .1))
 
-dtm <- DocumentTermMatrix(corpus)
 
+#Se repite el procedimiento anterior pero esta vez usando un DTM en vez de un TDM
+dtm <- to_DTM(corpus)
 freq <- colSums(as.matrix(dtm))
 
+#Se especifican ahora colores para las palabras
 set.seed(142)   
 dark2 <- brewer.pal(6, "Dark2")
-wordcloud(names(freq), freq, min.freq=15, max.words = 50, scale=c(5, .1), colors = dark2)
+wordcloud(names(freq), freq, min.freq=10, max.words = 60, scale=c(4, .1), colors = dark2)
 
+```
+
+```{r}
+#Mostrar palabras del corpus ordenadas por frecuencia (menor a mayor)
+dtm <- to_dtm(corpus)
+freq <- colSums(as.matrix(dtm))
+ord <- order(freq)
+freq[ord]
+
+#Mostrar palabras del corpus ordenadas por frecuencia (mayor a menor)
+tdm <- to_TDM(corpus)
+freq <- rowSums(as.matrix(tdm))
+ord <- order(freq, decreasing=TRUE)
+freq[ord]
 ```
 
