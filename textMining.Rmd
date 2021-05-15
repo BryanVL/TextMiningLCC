@@ -30,6 +30,8 @@ library(tm)
 library(pdftools)
 library(stringr)
 library(stringi)
+library(wordcloud)
+library(ggplot2)
 
 ```
 
@@ -52,12 +54,16 @@ lapply(texts, length)
 corpus <- VCorpus(VectorSource(texts))
 inspect(corpus)$meta
 
-#corpus <- tm_map(corpus, removePunctuation, ucp = TRUE)
-corpus <- tm_map(corpus,stripWhitespace)
-#corpus <- tm_map(corpus,content_transformer(tolower))
 
+clean_corpus <- function(corpus){
+  corpus <- tm_map(corpus, removePunctuation, ucp = TRUE)
+  corpus <- tm_map(corpus,stripWhitespace)
+  corpus <- tm_map(corpus,content_transformer(tolower))
+  corpus <- tm_map(corpus, removeWords, c(stopwords("en")) )
+  return(corpus)
+}
 
-
+corpus <- clean_corpus(corpus)
 
 ```
 
@@ -66,8 +72,6 @@ corpus <- tm_map(corpus,stripWhitespace)
 removeSpCh <- content_transformer(function (x , pattern ) gsub(pattern, " ", x) )
 
 corpus <- tm_map(corpus, removeSpCh, "\n")
-corpus <- tm_map(corpus, toSpace, "<d5>")
-corpus <- tm_map(corpus, toSpace, "<d1>")
 corpus <- tm_map(corpus, removeSpCh, "\f")
 
 ```
@@ -75,21 +79,41 @@ corpus <- tm_map(corpus, removeSpCh, "\f")
 
 #Crear TDM y inspeccionar
 ```{r}
-to_TDM <- function(my_corpus){
-    my_corpus <- TermDocumentMatrix(my_corpus,
-                                    control = 
-                                    list( removePunctuation = TRUE,
-                                          stopwords = stopwords(kind = "en"),
-                                          tolower = TRUE,
-                                          stemming = FALSE,
-                                          removeNumbers = TRUE,
-                                           ) )
-}
+#to_TDM <- function(my_corpus){
+#    my_corpus <- TermDocumentMatrix(my_corpus,
+#                                    control = 
+#                                    list( removePunctuation = TRUE,
+#                                          stopwords = stopwords(kind = "en"),
+#                                          tolower = TRUE,
+#                                          stemming = FALSE,
+#                                          removeNumbers = TRUE
+#                                           ) )
+#}
 
-my_tdm <- to_TDM(corpus)
+#my_tdm <- to_TDM(corpus)
+#-------------------#
+my_tdm <- TermDocumentMatrix(corpus)
 
-inspect(my_tdm[1:250,])
+frequent_terms <-  findFreqTerms(my_tdm, 
+              lowfreq = 25, 
+              highfreq = Inf)
+frequent_terms
 
+matrix_tdm <- as.matrix(my_tdm[frequent_terms,])
+matrix_tdm
+
+
+set.seed(142)   
+wordcloud(names(my_tdm), my_tdm, min.freq=5, scale=c(5, .1))
+#--------------------#
+
+dtm <- DocumentTermMatrix(corpus)
+
+freq <- colSums(as.matrix(dtm))
+
+set.seed(142)   
+dark2 <- brewer.pal(6, "Dark2")
+wordcloud(names(freq), freq, min.freq=15, max.words = 50, scale=c(5, .1), colors = dark2)
 
 ```
 
