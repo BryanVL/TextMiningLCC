@@ -22,10 +22,6 @@ trabajo de investigación.
 
 ## 0. Carga de paquetes necesarios
 ```{r message=FALSE, warning=FALSE}
-Needed <- c("tm", "SnowballCC", "RColorBrewer", "ggplot2", "wordcloud", 
-"biclust", "cluster", "igraph", "fpc","pdftools")
-install.packages(Needed, dependencies=TRUE)
-
 library(tm)
 library(pdftools)
 library(stringr)
@@ -102,9 +98,10 @@ frequent_terms
 matrix_tdm <- as.matrix(my_tdm[frequent_terms,])
 matrix_tdm
 
+freq <- rowSums(matrix_tdm)
 
 set.seed(142)   
-wordcloud(names(my_tdm), my_tdm, min.freq=5, scale=c(5, .1))
+wordcloud(names(freq), freq, min.freq=5, scale=c(5, .1))
 #--------------------#
 
 dtm <- DocumentTermMatrix(corpus)
