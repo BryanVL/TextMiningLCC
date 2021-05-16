@@ -29,6 +29,7 @@ library(ggplot2)
 
 ```
 
+
 ## 1. Importación de textos
 ```{r}
 #Directorio en el que estan los pdfs
@@ -70,23 +71,28 @@ corpus <- clean_corpus(corpus)
 
 ```
 
+
 ## 2. Creación de Contenedor para eliminar caracteres especiales
 ```{r}
-#esta funcion recibe un patron y convierte en espacio en blanco las coincidencias
+#Esta funcion recibe un patron y convierte en espacio en blanco las coincidencias
 removeSpCh <- content_transformer(function (x , pattern ) gsub(pattern, " ", x) )
 
-#esta funcion recibe un patron y convierte las coincidencias en lo que 
+#Esta funcion recibe un patron y convierte las coincidencias en lo que 
 #reciba en su segundo argumento
 sustitution <- content_transformer(function (x , pattern, sustitucion ) gsub(pattern, sustitucion, x) )
 
+#Eliminamos caracteres especiales
 corpus <- tm_map(corpus, removeSpCh, "\a") #Eliminar caracter \a
 corpus <- tm_map(corpus, removeSpCh, "\n")
 corpus <- tm_map(corpus, removeSpCh, "\f")
 
+#Eliminamos palabras que no nos interesan
 #Eliminar todas las palabras que contengan http
 corpus <- tm_map(corpus, removeSpCh, "(http)") 
 corpus <- tm_map(corpus, removeSpCh, "(aaas)")
 corpus <- tm_map(corpus, removeSpCh, "(doi)")
+corpus <- tm_map(corpus, removeSpCh, "(also)")
+corpus <- tm_map(corpus, removeSpCh, "(can)")
 
 #Sustituir empt por empty
 corpus <- tm_map(corpus, sustitution, "(empt)", "empty")
@@ -94,7 +100,7 @@ corpus <- tm_map(corpus, sustitution, "(empt)", "empty")
 ```
 
 
-#3. Creación de TDM y inspección del mismo
+## 3. Creación de TDM/DTM y inspección de los mismos
 ```{r}
 #Esta función convierte un corpus en un tdm con un determinado formato
 to_TDM <- function(my_corpus){
@@ -116,26 +122,27 @@ to_DTM <- function(my_corpus){
                                               removeNumbers = TRUE) )
 }
 
-#convertimos el corpus en un tdm
+#Convertimos el corpus en un TDM
 my_tdm <- to_TDM(corpus)
 
 #Buscamos los terminos mas frecuentes. Como minimo deben tener frecuencia 20
 frequent_terms <-  findFreqTerms(my_tdm, lowfreq = 20, highfreq = Inf)
 frequent_terms
 
-#Convertimos los terminos frecuentes del tdm en una matriz y vemos cuantas
-#Veces aparece cada palabra en cada texto
+#Convertimos los terminos frecuentes del TDM en una matriz y vemos cuantas
+#veces aparece cada palabra en cada texto
 matrix_tdm <- as.matrix(my_tdm[frequent_terms,])
 matrix_tdm
 
 #Se suman las filas para conseguir la frecuencia de cada termino
 freq <- rowSums(matrix_tdm)
+freq
 
 #Se hace una nube de palabras al que se le pasa los nombres de los terminos, 
 #las frecuencias, la frecuencia minima para que se muestre la palabra
 #y el rango de tamaño de las palabras a enseñar
 set.seed(142)   
-wordcloud(names(freq), freq, min.freq=5, scale=c(4, .1))
+wordcloud(names(freq), freq, min.freq=5, scale=c(3, .1))
 
 
 #Se repite el procedimiento anterior pero esta vez usando un DTM en vez de un TDM
@@ -145,7 +152,7 @@ freq <- colSums(as.matrix(dtm))
 #Se especifican ahora colores para las palabras
 set.seed(142)   
 dark2 <- brewer.pal(6, "Dark2")
-wordcloud(names(freq), freq, min.freq=10, max.words = 50, scale=c(4, .1), colors = dark2)
+wordcloud(names(freq), freq, min.freq=10, max.words = 50, scale=c(2.5, .1), colors = dark2)
 
 
 #Mostrar palabras del corpus ordenadas por frecuencia (menor a mayor)
@@ -159,6 +166,22 @@ tdm <- to_TDM(corpus)
 freq <- rowSums(as.matrix(tdm))
 ord <- order(freq, decreasing=TRUE)
 head(freq[ord])
+
+
+#Podemos crear también un grafico de barras de frecuencias
+dtm <- to_DTM(corpus)
+freq <- colSums(as.matrix(dtm))
+wf <- data.frame(word=names(freq), freq=freq)
+
+p <- ggplot(subset(wf, freq>30), aes(word, freq)) +
+  geom_bar(stat="identity", fill="lightblue", colour="black") + 
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+    axis.title = element_text(size = 12, face = "bold") ) +
+  labs(x = "Palabras", y="Frecuencia") +
+  geom_text( aes(label=freq), vjust=-0.3, colour="black", size = 3.5)
+
+p
+
 ```
 
 
@@ -166,7 +189,7 @@ head(freq[ord])
 ```{r}
 #Vamos a ver la correlación que tienen las palabras más comunes que parecen 
 #mas interesantes con otras palabras. La correlación minima debe ser de 0.9
-asociaciones <-findAssocs(dtm, c("covid" , "conspiracy", "coronavirus", "science", "public", "vaccine"), corlimit=0.9) 
+asociaciones <- findAssocs(dtm, c("covid" , "conspiracy", "coronavirus", "science", "public", "vaccine"), corlimit=0.9) 
 
 asociaciones$covid
 asociaciones$conspiracy
