@@ -18,8 +18,6 @@ En este documento haremos text mining sobre los pdfs dados y haremos un pequeño
 trabajo de investigación.
 
 
-# ------------------ Manipulación dataset ------------------ #
-
 ## 0. Carga de paquetes necesarios
 ```{r message=FALSE, warning=FALSE}
 library(tm)
@@ -96,7 +94,7 @@ corpus <- tm_map(corpus, sustitution, "(empt)", "empty")
 ```
 
 
-#3. Creaación de TDM y inspección del mismo
+#3. Creación de TDM y inspección del mismo
 ```{r}
 #Esta función convierte un corpus en un tdm con un determinado formato
 to_TDM <- function(my_corpus){
@@ -121,7 +119,7 @@ to_DTM <- function(my_corpus){
 #convertimos el corpus en un tdm
 my_tdm <- to_TDM(corpus)
 
-#Buscamos los terminos mas frecuentes. Como minimo deben tener frecuencia 30
+#Buscamos los terminos mas frecuentes. Como minimo deben tener frecuencia 20
 frequent_terms <-  findFreqTerms(my_tdm, lowfreq = 20, highfreq = Inf)
 frequent_terms
 
@@ -147,21 +145,40 @@ freq <- colSums(as.matrix(dtm))
 #Se especifican ahora colores para las palabras
 set.seed(142)   
 dark2 <- brewer.pal(6, "Dark2")
-wordcloud(names(freq), freq, min.freq=10, max.words = 60, scale=c(4, .1), colors = dark2)
+wordcloud(names(freq), freq, min.freq=10, max.words = 50, scale=c(4, .1), colors = dark2)
 
-```
 
-```{r}
 #Mostrar palabras del corpus ordenadas por frecuencia (menor a mayor)
-dtm <- to_dtm(corpus)
+dtm <- to_DTM(corpus)
 freq <- colSums(as.matrix(dtm))
 ord <- order(freq)
-freq[ord]
+head(freq[ord])
 
 #Mostrar palabras del corpus ordenadas por frecuencia (mayor a menor)
 tdm <- to_TDM(corpus)
 freq <- rowSums(as.matrix(tdm))
 ord <- order(freq, decreasing=TRUE)
-freq[ord]
+head(freq[ord])
 ```
+
+
+## 5. Buscar correlación entre palabras
+```{r}
+#Vamos a ver la correlación que tienen las palabras más comunes que parecen 
+#mas interesantes con otras palabras. La correlación minima debe ser de 0.9
+asociaciones <-findAssocs(dtm, c("covid" , "conspiracy", "coronavirus", "science", "public", "vaccine"), corlimit=0.9) 
+
+asociaciones$covid
+asociaciones$conspiracy
+asociaciones$science
+asociaciones$public
+asociaciones$coronavirus[1:10]
+asociaciones$vaccine[1:10]
+```
+
+
+
+
+
+
 
