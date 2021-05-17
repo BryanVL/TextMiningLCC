@@ -185,7 +185,7 @@ p
 ```
 
 
-## 5. Buscar correlación entre palabras
+## 4. Buscar correlación entre palabras
 ```{r}
 #Vamos a ver la correlación que tienen las palabras más comunes que parecen 
 #mas interesantes con otras palabras. La correlación minima debe ser de 0.9
