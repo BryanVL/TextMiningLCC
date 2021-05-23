@@ -201,6 +201,10 @@ asociaciones$vaccine[1:10]
 
 
 
+## 5. Topic modeling 
+```{r}
+
+```
 
 
 
