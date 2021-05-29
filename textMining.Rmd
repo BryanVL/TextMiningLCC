@@ -26,7 +26,7 @@ library(stringr)
 library(stringi)
 library(wordcloud)
 library(ggplot2)
-
+library(tidyverse)
 ```
 
 
@@ -203,8 +203,139 @@ asociaciones$vaccine[1:10]
 
 ## 5. Topic modeling 
 ```{r}
+#El topic modeling es un metodo de clasificación no supervisada como lo puede
+#ser el clustering que tiene el objetivo de agrupar de forma natural los
+#documentos que se le pasen. Un metodo popular es Latent Dirichlet allocation (LDA).
+#Este algoritmo se basa en que todos los documentos estan formados por distintos
+#topicos y cada topico por distintas palabras. 
 
+#Para usar el algoritmo LDA se puede usar la función LDA() del paquete topicmodels.
+
+install.packages("topicmodels")
+library(topicmodels)
+
+#Esta funcion devuelve un conjunto de topicos. Usaremos el dtm antes generado
+#un k=10 (siendo este el numero de topicos)
+topicos <- LDA(dtm, k=6)
+
+
+#Ahora podemos usar la funcion tidy de tidytext para inspecionar el objeto generado
+#y ggplot para visualizarlo
+
+install.packages("tidytext")
+install.packages("reshape2")
+library(tidytext)
+
+ap_topics <- tidy(topicos, matrix="beta")
+ap_topics
+
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  slice_max(beta, n = 10) %>% 
+  ungroup() %>%
+  arrange(topic, -beta)
+
+#En estas graficas se muestran las palabras más comunes para cada uno de los 
+#topicos calculados
+ap_top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(beta, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()
+
+#Lo que podemos deducir de por ejemplo el grupo 1 es que trata sobre el tema
+#de las vacunas para el coronavirus. El segundo sobre ciencia o cientificos, 
+# el tercero sobre las muertes provocadas por el covid y el 5 y 6 
+#sobre conspiraciones. 
+
+#(Nota: las graficas se muestran en orden aleatorio y
+#la descripción anterior puede no ajustarse a lo que se ve en las graficas)
+
+
+
+#Otro paquete con el que es posible hacer topic modeling es stm
+install.packages("stm")
+library(stm)
+
+#La funcion que tiene para sacar topicos se llama stm (structural equation modeling)
+#y funciona de manera similar a la funcion LDA() usada anteriormente. Se le
+#pasa como parametro un dfm (Document-feature matrix), 
+#el numero de topicos a generar y el algoritmo a usar
+
+#Primero convertimos nuestro dtm en un dfm
+dfm <- tidy(dtm) %>% 
+  cast_dfm(document = document, term = term, value = count)
+dfm
+
+topicos_stm <- stm(dfm, K=6, verbose = FALSE, init.type = "LDA")
+topicos_stm
+
+
+#Podemos usar la función summary para ver los topicos generados
+summary(topicos_stm)
+
+#Como hicimos anteriormente, usando la funcion tidy podemos ver las palabras
+#que tienen más probabilidad de aparecer
+graf <- tidy(topicos_stm) %>% 
+  group_by(topic) %>%
+  top_n(10) %>% 
+  ungroup() %>% 
+  mutate(topic = str_c("topic", topic))
+
+
+ggplot(graf,aes(x = beta, y = term,  by = topic))+
+geom_bar(aes(fill = "kat" ), position = "dodge", width=.5, stat="identity")
+labs(title = "Words with highest probability in each topic")
+
+  
+
+  
+
+#Por ultimo, otra forma de hacer topic modeling es con el paquete textmineR
+install.packages("textmineR")
+library(textmineR)
+
+#Al igual que las dos alternativas anteriores, esta ofrece una función para 
+#generar los topicos con LDA. En este caso la función se llama FitLdaModel y 
+#recibe como parametros un DTM y el numero de topicos a generar (puede recibir
+#muchos parametros extras que se pueden ver en la ayuda, siendo uno interesante
+#el de cpus que permite indicar cuanto queremos paralelizar el proceso)
+
+
+topicos_textminer <- FitLdaModel(dtm = dfm, 
+                     k = 6,
+                     iterations = 200, 
+                     burnin = 180,
+                     alpha = 0.1,
+                     beta = 0.05,
+                     optimize_alpha = TRUE,
+                     calc_likelihood = TRUE,
+                     calc_coherence = TRUE,
+                     calc_r2 = TRUE,
+                     cpus = 2) 
+  
+#Este metodo nos ofrece estadisticos para evaluar los modelos como el r ajustado
+topicos_textminer$r2
+topicos_textminer$theta
+topicos_textminer$coherence
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
